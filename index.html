@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yeslyface · red social</title>
-    <!-- Font Awesome para iconos -->
+    <title>Yeslyface · Red Social con Firebase</title>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
         }
 
         body {
@@ -23,7 +23,6 @@
             padding: 20px;
         }
 
-        /* contenedor principal que simula las dos "páginas" */
         .app-container {
             width: 100%;
             max-width: 500px;
@@ -33,11 +32,10 @@
             border-radius: 48px;
             box-shadow: 0 30px 50px rgba(0, 20, 40, 0.25);
             padding: 24px 20px 32px;
-            transition: all 0.2s ease;
             border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
-        /* ============ PANTALLA LOGIN / REGISTRO ============ */
+        /* ============ AUTH ============ */
         #auth-section {
             display: block;
         }
@@ -132,9 +130,14 @@
             margin-top: 6px;
         }
 
-        .auth-form button:hover {
+        .auth-form button:hover:not(:disabled) {
             transform: scale(1.02);
             box-shadow: 0 12px 24px rgba(74, 108, 247, 0.4);
+        }
+
+        .auth-form button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .auth-error {
@@ -142,6 +145,16 @@
             font-size: 14px;
             text-align: center;
             background: rgba(192, 57, 43, 0.08);
+            padding: 8px;
+            border-radius: 30px;
+            display: none;
+        }
+
+        .auth-success {
+            color: #27ae60;
+            font-size: 14px;
+            text-align: center;
+            background: rgba(39, 174, 96, 0.08);
             padding: 8px;
             border-radius: 30px;
             display: none;
@@ -162,7 +175,7 @@
             margin-left: 6px;
         }
 
-        /* ============ PANTALLA HOME (feed + chat) ============ */
+        /* ============ HOME ============ */
         #home-section {
             display: none;
         }
@@ -216,7 +229,6 @@
             color: #c0392b;
         }
 
-        /* publicar */
         .publish-box {
             background: white;
             border-radius: 32px;
@@ -279,7 +291,6 @@
             transform: scale(0.97);
         }
 
-        /* feed de publicaciones */
         .feed {
             display: flex;
             flex-direction: column;
@@ -365,7 +376,6 @@
             color: #4a6cf7;
         }
 
-        /* chat rápido */
         .chat-mini {
             background: white;
             border-radius: 32px;
@@ -453,16 +463,24 @@
             background: #3a5bd9;
         }
 
-        /* utilidades */
         .hidden {
             display: none !important;
         }
 
-        .text-center {
-            text-align: center;
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s ease-in-out infinite;
         }
 
-        /* responsive */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         @media (max-width: 480px) {
             .app-container {
                 padding: 16px;
@@ -474,7 +492,7 @@
 <body>
 <div class="app-container">
 
-    <!-- ========== SECCIÓN AUTH ========== -->
+    <!-- ========== AUTH ========== -->
     <div id="auth-section">
         <div class="logo">
             <i class="fas fa-feather-alt"></i>
@@ -486,21 +504,26 @@
             <button class="auth-tab" id="tabRegister">Registrarse</button>
         </div>
 
-        <!-- formulario login -->
+        <!-- Login -->
         <form id="loginForm" class="auth-form">
             <input type="email" id="loginEmail" placeholder="Correo electrónico" required>
             <input type="password" id="loginPassword" placeholder="Contraseña" required>
-            <button type="submit"><i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i> Entrar</button>
-            <div class="auth-error" id="loginError">Usuario o contraseña incorrectos.</div>
+            <button type="submit" id="loginBtn">
+                <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i> Entrar
+            </button>
+            <div class="auth-error" id="loginError"></div>
         </form>
 
-        <!-- formulario registro -->
+        <!-- Register -->
         <form id="registerForm" class="auth-form hidden">
             <input type="text" id="regName" placeholder="Nombre de usuario" required>
             <input type="email" id="regEmail" placeholder="Correo electrónico" required>
             <input type="password" id="regPassword" placeholder="Contraseña (mínimo 6 caracteres)" required>
-            <button type="submit"><i class="fas fa-user-plus" style="margin-right: 8px;"></i> Crear cuenta</button>
-            <div class="auth-error" id="registerError">El usuario o correo ya existe.</div>
+            <button type="submit" id="registerBtn">
+                <i class="fas fa-user-plus" style="margin-right: 8px;"></i> Crear cuenta
+            </button>
+            <div class="auth-error" id="registerError"></div>
+            <div class="auth-success" id="registerSuccess">¡Cuenta creada! Inicia sesión.</div>
         </form>
 
         <div class="auth-switch">
@@ -509,7 +532,7 @@
         </div>
     </div>
 
-    <!-- ========== SECCIÓN HOME ========== -->
+    <!-- ========== HOME ========== -->
     <div id="home-section">
         <div class="home-header">
             <h2><i class="fas fa-home"></i> Yeslyface</h2>
@@ -519,7 +542,6 @@
             </div>
         </div>
 
-        <!-- publicar -->
         <div class="publish-box">
             <textarea id="postText" placeholder="¿Qué estás pensando, Yesly?"></textarea>
             <div class="publish-actions">
@@ -531,12 +553,8 @@
             </div>
         </div>
 
-        <!-- feed -->
-        <div class="feed" id="feedContainer">
-            <!-- los posts se inyectan dinámicamente -->
-        </div>
+        <div class="feed" id="feedContainer"></div>
 
-        <!-- chat rápido -->
         <div class="chat-mini">
             <div class="chat-header">
                 <i class="fas fa-comment-dots"></i> Chat rápido · Yesly
@@ -552,280 +570,341 @@
     </div>
 </div>
 
-<script>
-    (function() {
-        // ----- ESTADO SIMULADO (base de datos en memoria) -----
-        const DB = {
-            users: [
-                { name: 'Yesly', email: 'yesly@yesly.com', password: '123456' }
-            ],
-            posts: [
-                { id: 1, user: 'Yesly', text: '¡Primer post en Yeslyface! 🚀', image: null, time: 'hace 2 min' },
-                { id: 2, user: 'Yesly', text: 'Me encanta esta red social', image: null, time: 'hace 5 min' }
-            ],
-            chat: ['👋 ¡Bienvenido a Yeslyface!']
+<!-- ========== FIREBASE SDK ========== -->
+<script type="importmap">
+    {
+        "imports": {
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"
+        }
+    }
+</script>
+
+<script type="module">
+    import { initializeApp } from "firebase/app";
+    import { 
+        getAuth, 
+        createUserWithEmailAndPassword, 
+        signInWithEmailAndPassword,
+        onAuthStateChanged,
+        signOut,
+        updateProfile
+    } from "firebase/auth";
+
+    // ========== CONFIGURACIÓN DE FIREBASE ==========
+    const firebaseConfig = {
+        apiKey: "AIzaSyCpFnSLx-ZUq6j27T-w_nvsdSvUrNs688g",
+        authDomain: "heyding-kayser.firebaseapp.com",
+        databaseURL: "https://heyding-kayser-default-rtdb.firebaseio.com",
+        projectId: "heyding-kayser",
+        storageBucket: "heyding-kayser.firebasestorage.app",
+        messagingSenderId: "231005618306",
+        appId: "1:231005618306:web:b349379b513145b6e6349b",
+        measurementId: "G-0F9T839VVZ"
+    };
+
+    // Inicializar Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ========== DOM REFERENCES ==========
+    const authSection = document.getElementById('auth-section');
+    const homeSection = document.getElementById('home-section');
+
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const loginError = document.getElementById('loginError');
+    const registerError = document.getElementById('registerError');
+    const registerSuccess = document.getElementById('registerSuccess');
+    const switchText = document.getElementById('switchText');
+    const switchAction = document.getElementById('switchAction');
+
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const loginBtn = document.getElementById('loginBtn');
+    const regName = document.getElementById('regName');
+    const regEmail = document.getElementById('regEmail');
+    const regPassword = document.getElementById('regPassword');
+    const registerBtn = document.getElementById('registerBtn');
+
+    const displayUsername = document.getElementById('displayUsername');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const postText = document.getElementById('postText');
+    const publishBtn = document.getElementById('publishBtn');
+    const feedContainer = document.getElementById('feedContainer');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const chatSendBtn = document.getElementById('chatSendBtn');
+
+    // ========== ESTADO LOCAL ==========
+    let currentUser = null;
+    let posts = [
+        { id: 1, user: 'Yesly', text: '¡Primer post en Yeslyface! 🚀', image: null, time: 'hace 2 min' },
+        { id: 2, user: 'Yesly', text: 'Me encanta esta red social', image: null, time: 'hace 5 min' }
+    ];
+    let chatMessagesData = ['👋 ¡Bienvenido a Yeslyface!'];
+    let postIdCounter = 3;
+
+    // ========== FUNCIONES UI ==========
+    function renderFeed() {
+        feedContainer.innerHTML = '';
+        posts.slice().reverse().forEach(post => {
+            const postDiv = document.createElement('div');
+            postDiv.className = 'post';
+            const avatarLetter = post.user.charAt(0).toUpperCase();
+            const imageHtml = post.image 
+                ? `<div class="post-image"><i class="fas fa-image"></i> ${post.image}</div>` 
+                : '';
+            postDiv.innerHTML = `
+                <div class="post-header">
+                    <div class="avatar">${avatarLetter}</div>
+                    <div class="username">${post.user}</div>
+                    <div class="time">${post.time || 'ahora'}</div>
+                </div>
+                <div class="post-content">${post.text}</div>
+                ${imageHtml}
+            `;
+            feedContainer.appendChild(postDiv);
+        });
+    }
+
+    function renderChat() {
+        chatMessages.innerHTML = '';
+        chatMessagesData.forEach(msg => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'msg';
+            if (currentUser && msg.includes(currentUser.displayName || currentUser.email)) {
+                msgDiv.classList.add('me');
+            }
+            msgDiv.textContent = msg;
+            chatMessages.appendChild(msgDiv);
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addPost(text, image = null) {
+        if (!currentUser) return;
+        if (!text.trim() && !image) return;
+        const newPost = {
+            id: postIdCounter++,
+            user: currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario',
+            text: text.trim() || '(sin texto)',
+            image: image,
+            time: 'ahora'
         };
+        posts.push(newPost);
+        renderFeed();
+    }
 
-        let currentUser = null;    // { name, email }
-        let postIdCounter = 3;
+    function addChatMessage(msg) {
+        if (!msg.trim()) return;
+        const name = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tú';
+        const fullMsg = `${name}: ${msg.trim()}`;
+        chatMessagesData.push(fullMsg);
+        renderChat();
+    }
 
-        // ----- DOM references -----
-        const authSection = document.getElementById('auth-section');
-        const homeSection = document.getElementById('home-section');
-
-        const tabLogin = document.getElementById('tabLogin');
-        const tabRegister = document.getElementById('tabRegister');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-        const loginError = document.getElementById('loginError');
-        const registerError = document.getElementById('registerError');
-        const switchText = document.getElementById('switchText');
-        const switchAction = document.getElementById('switchAction');
-
-        const loginEmail = document.getElementById('loginEmail');
-        const loginPassword = document.getElementById('loginPassword');
-        const regName = document.getElementById('regName');
-        const regEmail = document.getElementById('regEmail');
-        const regPassword = document.getElementById('regPassword');
-
-        const displayUsername = document.getElementById('displayUsername');
-        const logoutBtn = document.getElementById('logoutBtn');
-
-        const postText = document.getElementById('postText');
-        const publishBtn = document.getElementById('publishBtn');
-        const feedContainer = document.getElementById('feedContainer');
-
-        const chatMessages = document.getElementById('chatMessages');
-        const chatInput = document.getElementById('chatInput');
-        const chatSendBtn = document.getElementById('chatSendBtn');
-
-        // ----- helpers -----
-        function showAuthError(msg) {
-            loginError.style.display = 'block';
-            loginError.textContent = msg;
+    function setLoading(button, isLoading) {
+        if (isLoading) {
+            button.disabled = true;
+            button.innerHTML = '<span class="loading-spinner"></span> Cargando...';
+        } else {
+            button.disabled = false;
+            const originalText = button.id === 'loginBtn' ? 'Entrar' : 'Crear cuenta';
+            const icon = button.id === 'loginBtn' ? 'fa-sign-in-alt' : 'fa-user-plus';
+            button.innerHTML = `<i class="fas ${icon}" style="margin-right: 8px;"></i> ${originalText}`;
         }
+    }
 
-        function showRegisterError(msg) {
-            registerError.style.display = 'block';
-            registerError.textContent = msg;
-        }
+    function showHome(user) {
+        currentUser = user;
+        displayUsername.textContent = user.displayName || user.email?.split('@')[0] || 'Usuario';
+        authSection.style.display = 'none';
+        homeSection.style.display = 'block';
+        renderFeed();
+        renderChat();
+    }
 
-        function renderFeed() {
-            feedContainer.innerHTML = '';
-            DB.posts.slice().reverse().forEach(post => {
-                const postDiv = document.createElement('div');
-                postDiv.className = 'post';
-                const avatarLetter = post.user.charAt(0).toUpperCase();
-                const imageHtml = post.image 
-                    ? `<div class="post-image"><i class="fas fa-image"></i> ${post.image}</div>` 
-                    : '';
-                postDiv.innerHTML = `
-                    <div class="post-header">
-                        <div class="avatar">${avatarLetter}</div>
-                        <div class="username">${post.user}</div>
-                        <div class="time">${post.time || 'ahora'}</div>
-                    </div>
-                    <div class="post-content">${post.text}</div>
-                    ${imageHtml}
-                `;
-                feedContainer.appendChild(postDiv);
-            });
-        }
-
-        function renderChat() {
-            chatMessages.innerHTML = '';
-            DB.chat.forEach(msg => {
-                const msgDiv = document.createElement('div');
-                msgDiv.className = 'msg';
-                if (currentUser && msg.includes(currentUser.name)) {
-                    msgDiv.classList.add('me');
-                }
-                msgDiv.textContent = msg;
-                chatMessages.appendChild(msgDiv);
-            });
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function addPost(text, image = null) {
-            if (!currentUser) return;
-            if (!text.trim() && !image) return;
-            const newPost = {
-                id: postIdCounter++,
-                user: currentUser.name,
-                text: text.trim() || '(sin texto)',
-                image: image,
-                time: 'ahora'
-            };
-            DB.posts.push(newPost);
-            renderFeed();
-        }
-
-        function addChatMessage(msg) {
-            if (!msg.trim()) return;
-            const fullMsg = currentUser ? `${currentUser.name}: ${msg.trim()}` : msg.trim();
-            DB.chat.push(fullMsg);
-            renderChat();
-        }
-
-        // ----- autenticación -----
-        function loginUser(email, password) {
-            const user = DB.users.find(u => u.email === email && u.password === password);
-            if (user) {
-                currentUser = { name: user.name, email: user.email };
-                displayUsername.textContent = currentUser.name;
-                authSection.style.display = 'none';
-                homeSection.style.display = 'block';
-                renderFeed();
-                renderChat();
-                return true;
-            }
-            return false;
-        }
-
-        function registerUser(name, email, password) {
-            if (DB.users.find(u => u.email === email)) {
-                return false;
-            }
-            if (DB.users.find(u => u.name === name)) {
-                return false;
-            }
-            DB.users.push({ name, email, password });
-            return true;
-        }
-
-        function logout() {
-            currentUser = null;
-            homeSection.style.display = 'none';
-            authSection.style.display = 'block';
-            // resetear formularios
-            loginForm.reset();
-            registerForm.reset();
-            loginError.style.display = 'none';
-            registerError.style.display = 'none';
-            // limpiar campos de registro
-        }
-
-        // ----- eventos de UI -----
-        // Tabs
-        tabLogin.addEventListener('click', () => {
-            tabLogin.classList.add('active');
-            tabRegister.classList.remove('active');
-            loginForm.classList.remove('hidden');
-            registerForm.classList.add('hidden');
-            switchText.textContent = '¿No tienes cuenta?';
-            switchAction.textContent = 'Registrarse';
-            loginError.style.display = 'none';
-            registerError.style.display = 'none';
-        });
-
-        tabRegister.addEventListener('click', () => {
-            tabRegister.classList.add('active');
-            tabLogin.classList.remove('active');
-            registerForm.classList.remove('hidden');
-            loginForm.classList.add('hidden');
-            switchText.textContent = '¿Ya tienes cuenta?';
-            switchAction.textContent = 'Iniciar sesión';
-            loginError.style.display = 'none';
-            registerError.style.display = 'none';
-        });
-
-        // Switch
-        switchAction.addEventListener('click', () => {
-            if (switchAction.textContent === 'Registrarse') {
-                tabRegister.click();
-            } else {
-                tabLogin.click();
-            }
-        });
-
-        // Login submit
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = loginEmail.value.trim();
-            const password = loginPassword.value.trim();
-            if (!email || !password) {
-                showAuthError('Completa todos los campos.');
-                return;
-            }
-            if (loginUser(email, password)) {
-                loginError.style.display = 'none';
-                loginForm.reset();
-            } else {
-                showAuthError('Correo o contraseña incorrectos.');
-            }
-        });
-
-        // Register submit
-        registerForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = regName.value.trim();
-            const email = regEmail.value.trim();
-            const password = regPassword.value.trim();
-            if (!name || !email || password.length < 6) {
-                showRegisterError('Nombre, correo y contraseña (mín 6 caracteres)');
-                return;
-            }
-            if (registerUser(name, email, password)) {
-                registerError.style.display = 'none';
-                // auto-login
-                if (loginUser(email, password)) {
-                    registerForm.reset();
-                } else {
-                    // fallback: mostrar login
-                    tabLogin.click();
-                }
-            } else {
-                showRegisterError('El nombre o correo ya está registrado.');
-            }
-        });
-
-        // Logout
-        logoutBtn.addEventListener('click', logout);
-
-        // Publicar
-        publishBtn.addEventListener('click', () => {
-            const text = postText.value.trim();
-            if (!text) {
-                alert('Escribe algo para publicar.');
-                return;
-            }
-            addPost(text);
-            postText.value = '';
-        });
-
-        // Simular subir foto (solo placeholder)
-        document.getElementById('fakePhotoBtn').addEventListener('click', () => {
-            if (!currentUser) return;
-            addPost('📸 Foto compartida', 'imagen-simulada.jpg');
-        });
-
-        // Chat
-        chatSendBtn.addEventListener('click', () => {
-            const msg = chatInput.value.trim();
-            if (!msg) return;
-            addChatMessage(msg);
-            chatInput.value = '';
-        });
-
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                chatSendBtn.click();
-            }
-        });
-
-        // Inicializar: mostrar login por defecto, pero si hay usuario (demo) lo dejamos
-        // Para demo, mostramos login
-        authSection.style.display = 'block';
+    function showAuth() {
+        currentUser = null;
         homeSection.style.display = 'none';
+        authSection.style.display = 'block';
+        loginForm.reset();
+        registerForm.reset();
+        loginError.style.display = 'none';
+        registerError.style.display = 'none';
+        registerSuccess.style.display = 'none';
+    }
 
-        // Pre-cargar usuario de ejemplo? No, mejor que el usuario decida.
-        // Pero para agilizar, podemos poner un usuario rápido con "yesly@yesly.com" / "123456"
-        // No auto-login para que el usuario vea el flujo.
+    // ========== EVENTOS UI ==========
+    // Tabs
+    tabLogin.addEventListener('click', () => {
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        switchText.textContent = '¿No tienes cuenta?';
+        switchAction.textContent = 'Registrarse';
+        loginError.style.display = 'none';
+        registerError.style.display = 'none';
+        registerSuccess.style.display = 'none';
+    });
 
-        // Pequeño truco: si se quiere auto-login para pruebas, descomentar:
-        // loginUser('yesly@yesly.com', '123456');
-    })();
+    tabRegister.addEventListener('click', () => {
+        tabRegister.classList.add('active');
+        tabLogin.classList.remove('active');
+        registerForm.classList.remove('hidden');
+        loginForm.classList.add('hidden');
+        switchText.textContent = '¿Ya tienes cuenta?';
+        switchAction.textContent = 'Iniciar sesión';
+        loginError.style.display = 'none';
+        registerError.style.display = 'none';
+        registerSuccess.style.display = 'none';
+    });
+
+    switchAction.addEventListener('click', () => {
+        if (switchAction.textContent === 'Registrarse') {
+            tabRegister.click();
+        } else {
+            tabLogin.click();
+        }
+    });
+
+    // ========== LOGIN ==========
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value.trim();
+
+        if (!email || !password) {
+            loginError.textContent = 'Completa todos los campos.';
+            loginError.style.display = 'block';
+            return;
+        }
+
+        setLoading(loginBtn, true);
+        loginError.style.display = 'none';
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            // El estado se maneja en onAuthStateChanged
+            loginForm.reset();
+        } catch (error) {
+            let msg = 'Error al iniciar sesión.';
+            if (error.code === 'auth/user-not-found') msg = 'Usuario no encontrado.';
+            else if (error.code === 'auth/wrong-password') msg = 'Contraseña incorrecta.';
+            else if (error.code === 'auth/invalid-email') msg = 'Correo inválido.';
+            else if (error.code === 'auth/too-many-requests') msg = 'Demasiados intentos. Intenta más tarde.';
+            loginError.textContent = msg;
+            loginError.style.display = 'block';
+        } finally {
+            setLoading(loginBtn, false);
+        }
+    });
+
+    // ========== REGISTER ==========
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = regName.value.trim();
+        const email = regEmail.value.trim();
+        const password = regPassword.value.trim();
+
+        if (!name || !email || password.length < 6) {
+            registerError.textContent = 'Nombre, correo y contraseña (mín 6 caracteres)';
+            registerError.style.display = 'block';
+            registerSuccess.style.display = 'none';
+            return;
+        }
+
+        setLoading(registerBtn, true);
+        registerError.style.display = 'none';
+        registerSuccess.style.display = 'none';
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            // Actualizar perfil con nombre
+            await updateProfile(userCredential.user, {
+                displayName: name
+            });
+            registerSuccess.textContent = '¡Cuenta creada exitosamente!';
+            registerSuccess.style.display = 'block';
+            registerForm.reset();
+            // Cambiar a login después de 2 segundos
+            setTimeout(() => {
+                tabLogin.click();
+                registerSuccess.style.display = 'none';
+            }, 2000);
+        } catch (error) {
+            let msg = 'Error al crear la cuenta.';
+            if (error.code === 'auth/email-already-in-use') msg = 'Este correo ya está registrado.';
+            else if (error.code === 'auth/invalid-email') msg = 'Correo inválido.';
+            else if (error.code === 'auth/weak-password') msg = 'Contraseña demasiado débil (mín 6 caracteres).';
+            registerError.textContent = msg;
+            registerError.style.display = 'block';
+        } finally {
+            setLoading(registerBtn, false);
+        }
+    });
+
+    // ========== LOGOUT ==========
+    logoutBtn.addEventListener('click', async () => {
+        try {
+            await signOut(auth);
+            showAuth();
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error);
+        }
+    });
+
+    // ========== PUBLICAR ==========
+    publishBtn.addEventListener('click', () => {
+        const text = postText.value.trim();
+        if (!text) {
+            alert('Escribe algo para publicar.');
+            return;
+        }
+        addPost(text);
+        postText.value = '';
+    });
+
+    document.getElementById('fakePhotoBtn').addEventListener('click', () => {
+        if (!currentUser) return;
+        addPost('📸 Foto compartida', 'imagen-simulada.jpg');
+    });
+
+    // ========== CHAT ==========
+    chatSendBtn.addEventListener('click', () => {
+        const msg = chatInput.value.trim();
+        if (!msg) return;
+        addChatMessage(msg);
+        chatInput.value = '';
+    });
+
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            chatSendBtn.click();
+        }
+    });
+
+    // ========== MONITOREO DE AUTENTICACIÓN ==========
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            showHome(user);
+        } else {
+            showAuth();
+        }
+    });
+
+    // ========== INICIALIZAR ==========
+    // Mostrar auth por defecto (onAuthStateChanged se encarga)
+    authSection.style.display = 'block';
+    homeSection.style.display = 'none';
+
+    console.log('✅ Yeslyface con Firebase Authentication activado');
+    console.log('📝 Solo usuarios registrados en Firebase pueden iniciar sesión');
 </script>
 </body>
 </html>
