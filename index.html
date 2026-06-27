@@ -246,6 +246,7 @@
             outline: none;
             background: transparent;
             min-height: 60px;
+            font-family: inherit;
         }
 
         .publish-actions {
@@ -291,6 +292,29 @@
             transform: scale(0.97);
         }
 
+        /* Contador de publicaciones */
+        .feed-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 0 4px;
+        }
+
+        .feed-header h3 {
+            font-size: 16px;
+            color: #1a2a6c;
+            font-weight: 600;
+        }
+
+        .feed-header .post-count {
+            font-size: 13px;
+            color: #7f8c8d;
+            background: rgba(0,0,0,0.04);
+            padding: 4px 14px;
+            border-radius: 20px;
+        }
+
         .feed {
             display: flex;
             flex-direction: column;
@@ -316,6 +340,18 @@
             padding: 16px 18px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
             border: 1px solid rgba(0,0,0,0.02);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .post-header {
@@ -336,6 +372,7 @@
             color: white;
             font-weight: 600;
             font-size: 16px;
+            flex-shrink: 0;
         }
 
         .post-header .username {
@@ -349,11 +386,23 @@
             font-size: 12px;
         }
 
+        /* Estilo para el contenido con <pre> */
         .post-content {
-            font-size: 15px;
-            line-height: 1.5;
-            color: #1e2a3a;
             padding: 4px 0 8px;
+        }
+
+        .post-content pre {
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #1e2a3a;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+            font-weight: 400;
         }
 
         .post-image {
@@ -374,6 +423,13 @@
             font-size: 28px;
             margin-right: 8px;
             color: #4a6cf7;
+        }
+
+        .post-image img {
+            max-width: 100%;
+            border-radius: 16px;
+            max-height: 300px;
+            object-fit: cover;
         }
 
         .chat-mini {
@@ -481,6 +537,23 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Mensaje cuando no hay publicaciones */
+        .empty-feed {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 30px 20px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 28px;
+            font-size: 14px;
+        }
+
+        .empty-feed i {
+            font-size: 40px;
+            color: #b0c4de;
+            margin-bottom: 10px;
+            display: block;
+        }
+
         @media (max-width: 480px) {
             .app-container {
                 padding: 16px;
@@ -551,6 +624,12 @@
                 </div>
                 <button id="publishBtn"><i class="fas fa-pen-fancy" style="margin-right: 6px;"></i> Publicar</button>
             </div>
+        </div>
+
+        <!-- Feed con contador -->
+        <div class="feed-header">
+            <h3><i class="fas fa-newspaper" style="color: #4a6cf7; margin-right: 6px;"></i> Publicaciones</h3>
+            <span class="post-count" id="postCount">0 publicaciones</span>
         </div>
 
         <div class="feed" id="feedContainer"></div>
@@ -634,6 +713,7 @@
     const postText = document.getElementById('postText');
     const publishBtn = document.getElementById('publishBtn');
     const feedContainer = document.getElementById('feedContainer');
+    const postCount = document.getElementById('postCount');
     const chatMessages = document.getElementById('chatMessages');
     const chatInput = document.getElementById('chatInput');
     const chatSendBtn = document.getElementById('chatSendBtn');
@@ -650,24 +730,50 @@
     // ========== FUNCIONES UI ==========
     function renderFeed() {
         feedContainer.innerHTML = '';
-        posts.slice().reverse().forEach(post => {
+        
+        if (posts.length === 0) {
+            feedContainer.innerHTML = `
+                <div class="empty-feed">
+                    <i class="fas fa-inbox"></i>
+                    No hay publicaciones aún. ¡Sé el primero en publicar!
+                </div>
+            `;
+            postCount.textContent = '0 publicaciones';
+            return;
+        }
+
+        // Mostrar publicaciones de la más nueva a la más antigua
+        const sortedPosts = [...posts].reverse();
+        sortedPosts.forEach(post => {
             const postDiv = document.createElement('div');
             postDiv.className = 'post';
             const avatarLetter = post.user.charAt(0).toUpperCase();
-            const imageHtml = post.image 
-                ? `<div class="post-image"><i class="fas fa-image"></i> ${post.image}</div>` 
-                : '';
+            
+            let imageHtml = '';
+            if (post.image) {
+                if (post.image.startsWith('http')) {
+                    imageHtml = `<div class="post-image"><img src="${post.image}" alt="Imagen compartida"></div>`;
+                } else {
+                    imageHtml = `<div class="post-image"><i class="fas fa-image"></i> ${post.image}</div>`;
+                }
+            }
+            
             postDiv.innerHTML = `
                 <div class="post-header">
                     <div class="avatar">${avatarLetter}</div>
                     <div class="username">${post.user}</div>
                     <div class="time">${post.time || 'ahora'}</div>
                 </div>
-                <div class="post-content">${post.text}</div>
+                <div class="post-content">
+                    <pre>${post.text}</pre>
+                </div>
                 ${imageHtml}
             `;
             feedContainer.appendChild(postDiv);
         });
+
+        // Actualizar contador
+        postCount.textContent = `${posts.length} publicación${posts.length !== 1 ? 'es' : ''}`;
     }
 
     function renderChat() {
@@ -687,15 +793,18 @@
     function addPost(text, image = null) {
         if (!currentUser) return;
         if (!text.trim() && !image) return;
+        const userName = currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario';
         const newPost = {
             id: postIdCounter++,
-            user: currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario',
+            user: userName,
             text: text.trim() || '(sin texto)',
             image: image,
-            time: 'ahora'
+            time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
         };
         posts.push(newPost);
         renderFeed();
+        // Hacer scroll al inicio del feed para ver la nueva publicación
+        feedContainer.scrollTop = 0;
     }
 
     function addChatMessage(msg) {
@@ -788,8 +897,7 @@
         loginError.style.display = 'none';
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            // El estado se maneja en onAuthStateChanged
+            await signInWithEmailAndPassword(auth, email, password);
             loginForm.reset();
         } catch (error) {
             let msg = 'Error al iniciar sesión.';
@@ -824,14 +932,12 @@
 
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            // Actualizar perfil con nombre
             await updateProfile(userCredential.user, {
                 displayName: name
             });
             registerSuccess.textContent = '¡Cuenta creada exitosamente!';
             registerSuccess.style.display = 'block';
             registerForm.reset();
-            // Cambiar a login después de 2 segundos
             setTimeout(() => {
                 tabLogin.click();
                 registerSuccess.style.display = 'none';
@@ -869,9 +975,23 @@
         postText.value = '';
     });
 
+    // Enter en textarea también publica
+    postText.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.ctrlKey) {
+            e.preventDefault();
+            publishBtn.click();
+        }
+    });
+
     document.getElementById('fakePhotoBtn').addEventListener('click', () => {
         if (!currentUser) return;
-        addPost('📸 Foto compartida', 'imagen-simulada.jpg');
+        // Simular subida de foto
+        const imageUrl = prompt('Pega la URL de una imagen (opcional):', 'https://picsum.photos/seed/yesly/400/300');
+        if (imageUrl) {
+            addPost('📸 Foto compartida', imageUrl);
+        } else {
+            addPost('📸 Foto compartida', 'imagen-simulada.jpg');
+        }
     });
 
     // ========== CHAT ==========
@@ -899,12 +1019,12 @@
     });
 
     // ========== INICIALIZAR ==========
-    // Mostrar auth por defecto (onAuthStateChanged se encarga)
     authSection.style.display = 'block';
     homeSection.style.display = 'none';
 
     console.log('✅ Yeslyface con Firebase Authentication activado');
     console.log('📝 Solo usuarios registrados en Firebase pueden iniciar sesión');
+    console.log(`📊 ${posts.length} publicaciones cargadas`);
 </script>
 </body>
 </html>
