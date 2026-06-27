@@ -292,7 +292,6 @@
             transform: scale(0.97);
         }
 
-        /* Contador de publicaciones */
         .feed-header {
             display: flex;
             justify-content: space-between;
@@ -386,7 +385,6 @@
             font-size: 12px;
         }
 
-        /* Estilo para el contenido con <pre> */
         .post-content {
             padding: 4px 0 8px;
         }
@@ -417,6 +415,7 @@
             color: #6b7a8f;
             font-size: 14px;
             border: 1px dashed #b0c4de;
+            overflow: hidden;
         }
 
         .post-image i {
@@ -537,7 +536,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Mensaje cuando no hay publicaciones */
         .empty-feed {
             text-align: center;
             color: #7f8c8d;
@@ -552,6 +550,18 @@
             color: #b0c4de;
             margin-bottom: 10px;
             display: block;
+        }
+
+        .loading-text {
+            text-align: center;
+            color: #7f8c8d;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        .loading-text i {
+            margin-right: 8px;
+            color: #4a6cf7;
         }
 
         @media (max-width: 480px) {
@@ -626,13 +636,14 @@
             </div>
         </div>
 
-        <!-- Feed con contador -->
         <div class="feed-header">
             <h3><i class="fas fa-newspaper" style="color: #4a6cf7; margin-right: 6px;"></i> Publicaciones</h3>
             <span class="post-count" id="postCount">0 publicaciones</span>
         </div>
 
-        <div class="feed" id="feedContainer"></div>
+        <div class="feed" id="feedContainer">
+            <div class="loading-text"><i class="fas fa-spinner fa-spin"></i> Cargando publicaciones...</div>
+        </div>
 
         <div class="chat-mini">
             <div class="chat-header">
@@ -654,7 +665,8 @@
     {
         "imports": {
             "firebase/app": "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js",
-            "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js"
+            "firebase/auth": "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js",
+            "firebase/database": "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js"
         }
     }
 </script>
@@ -669,6 +681,18 @@
         signOut,
         updateProfile
     } from "firebase/auth";
+    import { 
+        getDatabase, 
+        ref, 
+        push, 
+        onChildAdded, 
+        set,
+        query,
+        limitToLast,
+        orderByKey,
+        get,
+        remove
+    } from "firebase/database";
 
     // ========== CONFIGURACIÓN DE FIREBASE ==========
     const firebaseConfig = {
@@ -685,6 +709,11 @@
     // Inicializar Firebase
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    // ========== REFERENCIAS A LA BASE DE DATOS ==========
+    const postsRef = ref(database, 'posts');
+    const chatRef = ref(database, 'chat');
 
     // ========== DOM REFERENCES ==========
     const authSection = document.getElementById('auth-section');
@@ -720,12 +749,119 @@
 
     // ========== ESTADO LOCAL ==========
     let currentUser = null;
-    let posts = [
-        { id: 1, user: 'Yesly', text: '¡Primer post en Yeslyface! 🚀', image: null, time: 'hace 2 min' },
-        { id: 2, user: 'Yesly', text: 'Me encanta esta red social', image: null, time: 'hace 5 min' }
-    ];
-    let chatMessagesData = ['👋 ¡Bienvenido a Yeslyface!'];
-    let postIdCounter = 3;
+    let posts = [];
+    let chatMessagesData = [];
+
+    // ========== FUNCIONES DE BASE DE DATOS ==========
+    
+    // Cargar publicaciones existentes
+    function loadPosts() {
+        const postsQuery = query(ref(database, 'posts'), orderByKey());
+        get(postsQuery).then((snapshot) => {
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                posts = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                }));
+                renderFeed();
+            } else {
+                posts = [];
+                renderFeed();
+            }
+        }).catch((error) => {
+            console.error('Error cargando publicaciones:', error);
+            feedContainer.innerHTML = `
+                <div class="empty-feed">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Error al cargar publicaciones
+                </div>
+            `;
+        });
+    }
+
+    // Escuchar nuevas publicaciones en tiempo real
+    function listenForPosts() {
+        const postsQuery = query(ref(database, 'posts'), orderByKey());
+        onChildAdded(postsQuery, (snapshot) => {
+            const newPost = {
+                id: snapshot.key,
+                ...snapshot.val()
+            };
+            // Verificar si ya existe (evitar duplicados)
+            if (!posts.find(p => p.id === newPost.id)) {
+                posts.push(newPost);
+                renderFeed();
+                // Scroll al inicio para ver nueva publicación
+                if (feedContainer.scrollTop === 0 || posts.length <= 5) {
+                    feedContainer.scrollTop = 0;
+                }
+            }
+        });
+    }
+
+    // Escuchar nuevos mensajes de chat en tiempo real
+    function listenForChat() {
+        const chatQuery = query(ref(database, 'chat'), orderByKey());
+        onChildAdded(chatQuery, (snapshot) => {
+            const newMsg = {
+                id: snapshot.key,
+                ...snapshot.val()
+            };
+            if (!chatMessagesData.find(m => m.id === newMsg.id)) {
+                chatMessagesData.push(newMsg);
+                renderChat();
+            }
+        });
+    }
+
+    // Guardar publicación en Firebase
+    async function savePostToFirebase(text, image = null) {
+        if (!currentUser) return;
+        if (!text.trim() && !image) return;
+
+        const postData = {
+            user: currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario',
+            text: text.trim() || '(sin texto)',
+            image: image,
+            time: new Date().toLocaleString('es-ES', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }),
+            timestamp: Date.now(),
+            userId: currentUser.uid
+        };
+
+        try {
+            await push(postsRef, postData);
+            postText.value = '';
+        } catch (error) {
+            console.error('Error al guardar publicación:', error);
+            alert('Error al publicar. Intenta de nuevo.');
+        }
+    }
+
+    // Guardar mensaje de chat en Firebase
+    async function saveChatToFirebase(msg) {
+        if (!msg.trim() || !currentUser) return;
+
+        const chatData = {
+            message: msg.trim(),
+            user: currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario',
+            userId: currentUser.uid,
+            timestamp: Date.now()
+        };
+
+        try {
+            await push(chatRef, chatData);
+            chatInput.value = '';
+        } catch (error) {
+            console.error('Error al guardar mensaje:', error);
+        }
+    }
 
     // ========== FUNCIONES UI ==========
     function renderFeed() {
@@ -742,8 +878,9 @@
             return;
         }
 
-        // Mostrar publicaciones de la más nueva a la más antigua
-        const sortedPosts = [...posts].reverse();
+        // Ordenar de más nuevo a más antiguo
+        const sortedPosts = [...posts].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
         sortedPosts.forEach(post => {
             const postDiv = document.createElement('div');
             postDiv.className = 'post';
@@ -752,7 +889,7 @@
             let imageHtml = '';
             if (post.image) {
                 if (post.image.startsWith('http')) {
-                    imageHtml = `<div class="post-image"><img src="${post.image}" alt="Imagen compartida"></div>`;
+                    imageHtml = `<div class="post-image"><img src="${post.image}" alt="Imagen compartida" loading="lazy"></div>`;
                 } else {
                     imageHtml = `<div class="post-image"><i class="fas fa-image"></i> ${post.image}</div>`;
                 }
@@ -772,47 +909,27 @@
             feedContainer.appendChild(postDiv);
         });
 
-        // Actualizar contador
         postCount.textContent = `${posts.length} publicación${posts.length !== 1 ? 'es' : ''}`;
     }
 
     function renderChat() {
         chatMessages.innerHTML = '';
-        chatMessagesData.forEach(msg => {
+        // Mostrar últimos 10 mensajes
+        const recentMessages = [...chatMessagesData]
+            .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+            .slice(-10);
+        
+        recentMessages.forEach(msgData => {
             const msgDiv = document.createElement('div');
             msgDiv.className = 'msg';
-            if (currentUser && msg.includes(currentUser.displayName || currentUser.email)) {
+            const isOwn = currentUser && msgData.userId === currentUser.uid;
+            if (isOwn) {
                 msgDiv.classList.add('me');
             }
-            msgDiv.textContent = msg;
+            msgDiv.textContent = `${msgData.user}: ${msgData.message}`;
             chatMessages.appendChild(msgDiv);
         });
         chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    function addPost(text, image = null) {
-        if (!currentUser) return;
-        if (!text.trim() && !image) return;
-        const userName = currentUser.displayName || currentUser.email?.split('@')[0] || 'Usuario';
-        const newPost = {
-            id: postIdCounter++,
-            user: userName,
-            text: text.trim() || '(sin texto)',
-            image: image,
-            time: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-        };
-        posts.push(newPost);
-        renderFeed();
-        // Hacer scroll al inicio del feed para ver la nueva publicación
-        feedContainer.scrollTop = 0;
-    }
-
-    function addChatMessage(msg) {
-        if (!msg.trim()) return;
-        const name = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Tú';
-        const fullMsg = `${name}: ${msg.trim()}`;
-        chatMessagesData.push(fullMsg);
-        renderChat();
     }
 
     function setLoading(button, isLoading) {
@@ -832,8 +949,11 @@
         displayUsername.textContent = user.displayName || user.email?.split('@')[0] || 'Usuario';
         authSection.style.display = 'none';
         homeSection.style.display = 'block';
-        renderFeed();
-        renderChat();
+        
+        // Cargar datos de Firebase
+        loadPosts();
+        listenForPosts();
+        listenForChat();
     }
 
     function showAuth() {
@@ -845,6 +965,7 @@
         loginError.style.display = 'none';
         registerError.style.display = 'none';
         registerSuccess.style.display = 'none';
+        // Limpiar listeners? Se mantienen pero no se muestran
     }
 
     // ========== EVENTOS UI ==========
@@ -965,17 +1086,15 @@
     });
 
     // ========== PUBLICAR ==========
-    publishBtn.addEventListener('click', () => {
+    publishBtn.addEventListener('click', async () => {
         const text = postText.value.trim();
         if (!text) {
             alert('Escribe algo para publicar.');
             return;
         }
-        addPost(text);
-        postText.value = '';
+        await savePostToFirebase(text);
     });
 
-    // Enter en textarea también publica
     postText.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && e.ctrlKey) {
             e.preventDefault();
@@ -985,21 +1104,19 @@
 
     document.getElementById('fakePhotoBtn').addEventListener('click', () => {
         if (!currentUser) return;
-        // Simular subida de foto
         const imageUrl = prompt('Pega la URL de una imagen (opcional):', 'https://picsum.photos/seed/yesly/400/300');
         if (imageUrl) {
-            addPost('📸 Foto compartida', imageUrl);
-        } else {
-            addPost('📸 Foto compartida', 'imagen-simulada.jpg');
+            savePostToFirebase('📸 Foto compartida', imageUrl);
+        } else if (imageUrl !== null) {
+            savePostToFirebase('📸 Foto compartida', 'imagen-simulada.jpg');
         }
     });
 
     // ========== CHAT ==========
-    chatSendBtn.addEventListener('click', () => {
+    chatSendBtn.addEventListener('click', async () => {
         const msg = chatInput.value.trim();
         if (!msg) return;
-        addChatMessage(msg);
-        chatInput.value = '';
+        await saveChatToFirebase(msg);
     });
 
     chatInput.addEventListener('keypress', (e) => {
@@ -1022,9 +1139,8 @@
     authSection.style.display = 'block';
     homeSection.style.display = 'none';
 
-    console.log('✅ Yeslyface con Firebase Authentication activado');
-    console.log('📝 Solo usuarios registrados en Firebase pueden iniciar sesión');
-    console.log(`📊 ${posts.length} publicaciones cargadas`);
+    console.log('✅ Yeslyface con Firebase Authentication y Realtime Database');
+    console.log('📝 Las publicaciones se guardan en Firebase y persisten');
 </script>
 </body>
 </html>
