@@ -20,6 +20,26 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            transition: background 0.3s ease, background-image 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: #1a1a2e;
+            background-image: none;
+        }
+
+        body.bg-image {
+            background-image: url('https://raw.githubusercontent.com/welding30001994/heydin-kayser-vip/refs/heads/main/YESLY.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        body.dark-mode.bg-image {
+            background-image: url('https://raw.githubusercontent.com/welding30001994/heydin-kayser-vip/refs/heads/main/YESLY.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         .app-container {
@@ -32,10 +52,182 @@
             box-shadow: 0 30px 50px rgba(0, 20, 40, 0.25);
             padding: 24px 20px 32px;
             border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
-        #auth-section {
-            display: block;
+        body.dark-mode .app-container {
+            background: rgba(20, 20, 40, 0.85);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #eee;
+        }
+
+        body.dark-mode .app-container .logo span {
+            background: linear-gradient(135deg, #a8b5ff, #d4a5ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        body.dark-mode .auth-tab {
+            color: #ccc;
+        }
+
+        body.dark-mode .auth-tab.active {
+            background: #2a2a4a;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        body.dark-mode .auth-form input {
+            background: rgba(40, 40, 70, 0.8);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #eee;
+        }
+
+        body.dark-mode .auth-form input:focus {
+            border-color: #7c5cfc;
+            background: #2a2a4a;
+        }
+
+        body.dark-mode .auth-switch {
+            color: #ccc;
+        }
+
+        body.dark-mode .auth-switch a {
+            color: #9b6bff;
+        }
+
+        body.dark-mode .home-header h2 {
+            color: #d4d4ff;
+        }
+
+        body.dark-mode .user-badge span {
+            background: #2a2a4a;
+            color: #eee;
+        }
+
+        body.dark-mode .publish-box {
+            background: #2a2a4a;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        body.dark-mode .publish-box textarea {
+            color: #eee;
+            background: transparent;
+        }
+
+        body.dark-mode .publish-actions {
+            border-top-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .publish-actions .left-icons i {
+            color: #9b6bff;
+        }
+
+        body.dark-mode .post {
+            background: #2a2a4a;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        body.dark-mode .post-header .username {
+            color: #d4d4ff;
+        }
+
+        body.dark-mode .post-content {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .post-actions {
+            border-top-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .post-actions button {
+            color: #aaa;
+        }
+
+        body.dark-mode .post-actions button:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        body.dark-mode .post-actions button.liked {
+            color: #ff6b6b;
+        }
+
+        body.dark-mode .comments-section {
+            border-top-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .comment .comment-user {
+            color: #a8b5ff;
+        }
+
+        body.dark-mode .comment .comment-text {
+            color: #ddd;
+        }
+
+        body.dark-mode .comment-input input {
+            background: #1a1a3a;
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #eee;
+        }
+
+        body.dark-mode .chat-mini {
+            background: #2a2a4a;
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        body.dark-mode .chat-mini .chat-header {
+            color: #d4d4ff;
+        }
+
+        body.dark-mode .chat-messages {
+            background: #1a1a3a;
+            color: #ddd;
+        }
+
+        body.dark-mode .chat-messages .msg {
+            background: #2a2a4a;
+            color: #eee;
+        }
+
+        body.dark-mode .chat-messages .msg.me {
+            background: #4a6cf7;
+            color: white;
+        }
+
+        body.dark-mode .chat-input input {
+            background: #1a1a3a;
+            border-color: rgba(255, 255, 255, 0.1);
+            color: #eee;
+        }
+
+        body.dark-mode .home-header .theme-toggle {
+            background: #2a2a4a;
+            color: #eee;
+        }
+
+        .home-header .theme-toggle {
+            background: white;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            transition: 0.2s;
+            color: #1a2a6c;
+        }
+
+        .home-header .theme-toggle:hover {
+            transform: scale(1.03);
+        }
+
+        body.dark-mode .home-header .theme-toggle {
+            background: #2a2a4a;
+            color: #eee;
         }
 
         .logo {
@@ -69,6 +261,10 @@
             background: rgba(0, 0, 0, 0.04);
             padding: 6px;
             border-radius: 60px;
+        }
+
+        body.dark-mode .auth-tabs {
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .auth-tab {
@@ -182,6 +378,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .home-header h2 {
@@ -198,7 +396,8 @@
         .user-badge {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .user-badge span {
@@ -347,7 +546,6 @@
             font-size: 12px;
         }
 
-        /* ===== IMPORTANTE: Preservar saltos de línea ===== */
         .post-content {
             font-size: 15px;
             line-height: 1.6;
@@ -595,6 +793,13 @@
                 padding: 16px;
                 border-radius: 32px;
             }
+            .home-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .user-badge {
+                justify-content: space-between;
+            }
         }
     </style>
 </head>
@@ -636,6 +841,9 @@
             <div class="home-header">
                 <h2><i class="fas fa-home"></i> Yeslyface</h2>
                 <div class="user-badge">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i> <span id="themeLabel">Claro</span>
+                    </button>
                     <span id="displayUsername">Usuario</span>
                     <button id="logoutBtn" title="Cerrar sesión"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
@@ -736,9 +944,32 @@
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
         const chatSendBtn = document.getElementById('chatSendBtn');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeLabel = document.getElementById('themeLabel');
 
         let currentUser = null;
         let postsCache = {};
+        let isDark = false;
+        let isBgImage = true;
+
+        // ========== TEMA ==========
+        function applyTheme() {
+            document.body.classList.toggle('dark-mode', isDark);
+            document.body.classList.toggle('bg-image', isBgImage);
+            themeLabel.textContent = isDark ? 'Oscuro' : 'Claro';
+            themeToggle.innerHTML = isDark ?
+                '<i class="fas fa-sun"></i> <span id="themeLabel">Oscuro</span>' :
+                '<i class="fas fa-moon"></i> <span id="themeLabel">Claro</span>';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            isDark = !isDark;
+            applyTheme();
+        });
+
+        // Al iniciar, activar imagen de fondo por defecto
+        isBgImage = true;
+        applyTheme();
 
         // ========== FUNCIONES UI ==========
         function renderFeed(postsData) {
@@ -1148,7 +1379,6 @@
                 alert('Escribe algo para publicar.');
                 return;
             }
-            // Guardamos el texto con los saltos de línea intactos
             await savePost(text);
             postText.value = '';
         });
@@ -1184,6 +1414,7 @@
         authSection.style.display = 'block';
         homeSection.style.display = 'none';
         console.log('✅ Yeslyface con formato de texto preservado (saltos de línea)');
+        console.log('✅ Imagen de fondo y modo oscuro activos');
     </script>
 </body>
 </html>
