@@ -243,6 +243,7 @@
             outline: none;
             background: transparent;
             min-height: 60px;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
         }
 
         .publish-actions {
@@ -346,11 +347,15 @@
             font-size: 12px;
         }
 
+        /* ===== IMPORTANTE: Preservar saltos de línea ===== */
         .post-content {
             font-size: 15px;
-            line-height: 1.5;
+            line-height: 1.6;
             color: #1e2a3a;
             padding: 4px 0 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
         }
 
         .post-image {
@@ -438,6 +443,7 @@
         .comment .comment-text {
             color: #2c3e50;
             word-break: break-word;
+            white-space: pre-wrap;
         }
 
         .comment-input {
@@ -520,6 +526,8 @@
             display: inline-block;
             max-width: 80%;
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
 
         .chat-messages .msg.me {
@@ -757,12 +765,10 @@
                     '';
                 const timeStr = post.timestamp ? new Date(post.timestamp).toLocaleString() : 'ahora';
 
-                // Likes
                 const likes = post.likes || {};
                 const likeCount = Object.keys(likes).length;
                 const isLiked = currentUser && likes[currentUser.uid] === true;
 
-                // Comentarios
                 const comments = post.comments || {};
                 const commentsArray = Object.keys(comments).map(key => ({
                     id: key,
@@ -809,7 +815,6 @@
                 feedContainer.appendChild(postDiv);
             });
 
-            // Event listeners para los botones
             document.querySelectorAll('.like-btn').forEach(btn => {
                 btn.addEventListener('click', handleLike);
             });
@@ -1017,7 +1022,6 @@
                 const postData = snapshot.val();
                 if (!postData) return;
 
-                // Crear nueva publicación compartida
                 const shareText = `📤 Compartió: "${postData.text || 'Publicación'}"`;
                 await savePost(shareText);
                 alert('¡Publicación compartida!');
@@ -1139,11 +1143,12 @@
         });
 
         publishBtn.addEventListener('click', async () => {
-            const text = postText.value.trim();
-            if (!text) {
+            const text = postText.value;
+            if (!text.trim()) {
                 alert('Escribe algo para publicar.');
                 return;
             }
+            // Guardamos el texto con los saltos de línea intactos
             await savePost(text);
             postText.value = '';
         });
@@ -1178,7 +1183,7 @@
 
         authSection.style.display = 'block';
         homeSection.style.display = 'none';
-        console.log('✅ Yeslyface con Me Gusta, Comentarios y Compartir');
+        console.log('✅ Yeslyface con formato de texto preservado (saltos de línea)');
     </script>
 </body>
 </html>
