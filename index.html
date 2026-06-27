@@ -788,8 +788,7 @@
         loginError.style.display = 'none';
 
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            // El estado se maneja en onAuthStateChanged
+            await signInWithEmailAndPassword(auth, email, password);
             loginForm.reset();
         } catch (error) {
             let msg = 'Error al iniciar sesión.';
@@ -824,14 +823,12 @@
 
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            // Actualizar perfil con nombre
             await updateProfile(userCredential.user, {
                 displayName: name
             });
-            registerSuccess.textContent = '¡Cuenta creada exitosamente!';
+            registerSuccess.textContent = '✅ ¡Cuenta creada exitosamente!';
             registerSuccess.style.display = 'block';
             registerForm.reset();
-            // Cambiar a login después de 2 segundos
             setTimeout(() => {
                 tabLogin.click();
                 registerSuccess.style.display = 'none';
@@ -899,12 +896,11 @@
     });
 
     // ========== INICIALIZAR ==========
-    // Mostrar auth por defecto (onAuthStateChanged se encarga)
     authSection.style.display = 'block';
     homeSection.style.display = 'none';
 
-    console.log('✅ Yeslyface con Firebase Authentication activado');
-    console.log('📝 Solo usuarios registrados en Firebase pueden iniciar sesión');
+    console.log('✅ Yeslyface con Firebase Authentication');
+    console.log('📝 Solo usuarios registrados pueden entrar');
 </script>
 </body>
 </html>
